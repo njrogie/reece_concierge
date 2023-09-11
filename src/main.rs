@@ -2,12 +2,14 @@ use std::env;
 use dotenv::dotenv;
 
 use serenity::async_trait;
-use serenity::model::prelude::command;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 use serenity::model::channel::Message;
 use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::{StandardFramework, CommandResult};
+
+mod datastorage;
+use datastorage::save_channelid;
 
 #[group]
 #[commands(ping)]
@@ -23,6 +25,9 @@ impl EventHandler for Handler {}
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+
+    datastorage::init();
+
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
         .group(&GENERAL_GROUP);
@@ -61,12 +66,15 @@ async fn count(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn setchannel(ctx: &Context, msg: &Message) -> CommandResult {
-    //let channel = msg.channel_id.to_string();
+    // TODO: only allow setchannel to work if user has manage server permissions
+    
+    // Store the channel id in the file.
+    let channel = msg.channel_id.to_string();
+    save_channelid(channel);
 
-    //save_channelid(channel);
-
+    // Get the channel for the mention response.
     let channel = match msg.channel_id.to_channel(&ctx).await {
-        Ok(channel) => channel,
+        Ok(ch) => ch,
         Err(why) => {
             println!("Error getting channel: {:?}", why);
             return Ok(());
