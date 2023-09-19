@@ -9,12 +9,10 @@ use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::{StandardFramework, CommandResult};
 
 mod datastorage;
-use datastorage::save_channelid;
+//mod logger;
 
 #[group]
-#[commands(ping)]
-#[commands(count)]
-#[commands(setchannel)]
+#[commands(ping,count,setchannel)]
 struct General;
 
 struct Handler;
@@ -25,14 +23,17 @@ impl EventHandler for Handler {}
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    env::set_var("RUST_BACKTRACE","1");
 
     datastorage::init();
-
+    //logger::init();
+    println!("Initializing framework");
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
         .group(&GENERAL_GROUP);
 
     // Login with a bot token from the environment
+    println!("Initializing bot");
     let token = env::var("DISCORD_TOKEN").expect("token");
     let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
     let mut client = Client::builder(token, intents)
@@ -49,7 +50,7 @@ async fn main() {
 
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.reply(ctx, "Pong!").await?;
+    reply(msg, ctx, "Pong!".to_string()).await;
     Ok(())
 }
 
@@ -59,7 +60,8 @@ async fn count(ctx: &Context, msg: &Message) -> CommandResult {
         .mention(&msg.author)
         .push(" has 0 messages in this server (I haven't started counting them yet, numb nuts)")
         .build();
-    msg.reply(ctx, response).await?;
+    
+    reply(msg, ctx, response).await; 
 
     Ok(())
 }
@@ -67,10 +69,11 @@ async fn count(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn setchannel(ctx: &Context, msg: &Message) -> CommandResult {
     // TODO: only allow setchannel to work if user has manage server permissions
-    
     // Store the channel id in the file.
     let channel = msg.channel_id.to_string();
-    save_channelid(channel);
+    let guild = msg.guild_id;
+    let guild = guild.unwrap().0;
+    datastorage::save_channelid(guild, channel);
 
     // Get the channel for the mention response.
     let channel = match msg.channel_id.to_channel(&ctx).await {
@@ -85,7 +88,48 @@ async fn setchannel(ctx: &Context, msg: &Message) -> CommandResult {
         .push("Concierge has set up his desk in ")
         .mention(&channel)
         .build();
+    
+    reply(msg, ctx, response).await;
 
-    msg.reply(ctx, response).await?;
     Ok(())
+}
+
+async fn does_msg_match_channel(msg: &Message, ctx: &Context) -> bool {
+
+    // Get the channel for the mention response.
+    let channel =msg.channel_id.to_channel(&ctx).await;
+    let channel  = match channel {
+        Ok(ch) => ch,
+        Err(why) => {
+            println!("Error getting channel: {:?}", why);
+            return false;
+        },
+    };
+
+    let stored_id = datastorage::get_channelid(msg.guild_id.unwrap().0.to_string());
+    let actual_id = channel.id().to_owned();
+
+    stored_id.unwrap() == actual_id.to_string()
+}
+
+// Custom reply message only if we are in the correct channel.
+async fn reply(msg: &Message, ctx: &Context, resp: String) {
+    println!("beginning reply...");
+    let res: Result<Message, SerenityError>;
+    if does_msg_match_channel(msg, ctx).await {
+        res = msg.reply(ctx,resp).await;
+    } else {
+        res = msg.reply(ctx, MessageBuilder::new()
+            .push("This isn't the lobby sir; if I'm wrong, you should use the ")
+            .push_mono_line("setchannel")
+            .push(" command to move my lobby to this channel.")
+            .build()
+        ).await;
+    }
+    match res {
+        Ok(_) => { 
+            println!("{} {}", "Reply successful to", &msg.author.name);
+        },
+        Err(err) => { println!("Reply unsuccessful: {}", err.to_string()); }
+    }
 }
