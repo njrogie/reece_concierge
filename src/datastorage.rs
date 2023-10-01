@@ -9,7 +9,7 @@ use std::{fs, path::PathBuf};
 use std::io::{Error, ErrorKind, Write};
 use home;
 
-
+mod gathering; 
 
 pub fn init(){
     let appdata = appdata_dir().to_string();
@@ -107,5 +107,10 @@ mod tests {
     #[test]
     fn test_appdata() {
         assert_eq!(appdata_dir(), "/home/njrogie/.concierge");
+    }
+
+    #[test]
+    fn test_dateparsing() {
+
     }
 }

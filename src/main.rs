@@ -41,7 +41,6 @@ async fn main() {
         .framework(framework)
         .await
         .expect("Error creating client");
-
     // start listening for events by starting a single shard
     if let Err(why) = client.start().await {
         println!("An error occurred while running the client: {:?}", why);
@@ -90,14 +89,14 @@ async fn setchannel(ctx: &Context, msg: &Message) -> CommandResult {
         .build();
     
     reply(msg, ctx, response).await;
-
+    
     Ok(())
 }
 
 async fn does_msg_match_channel(msg: &Message, ctx: &Context) -> bool {
-
     // Get the channel for the mention response.
     let channel =msg.channel_id.to_channel(&ctx).await;
+
     let channel  = match channel {
         Ok(ch) => ch,
         Err(why) => {
@@ -109,7 +108,13 @@ async fn does_msg_match_channel(msg: &Message, ctx: &Context) -> bool {
     let stored_id = datastorage::get_channelid(msg.guild_id.unwrap().0.to_string());
     let actual_id = channel.id().to_owned();
 
-    stored_id.unwrap() == actual_id.to_string()
+    match stored_id {
+        Ok(id) => return id == actual_id.to_string(),
+        Err(e) => {
+            println!("Error retrieving stored id; no match ({})", e);
+            return false
+        }
+    }
 }
 
 // Custom reply message only if we are in the correct channel.
@@ -121,7 +126,7 @@ async fn reply(msg: &Message, ctx: &Context, resp: String) {
     } else {
         res = msg.reply(ctx, MessageBuilder::new()
             .push("This isn't the lobby sir; if I'm wrong, you should use the ")
-            .push_mono_line("setchannel")
+            .push_mono("setchannel")
             .push(" command to move my lobby to this channel.")
             .build()
         ).await;
