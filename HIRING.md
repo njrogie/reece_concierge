@@ -23,7 +23,7 @@ User2: I'm gonna go grab pizza. (messaged 25 days ago)
 User3: Not very dapper today, are you? (messaged 6 months ago)
 ```
 
-If we're on the same page, you can see that this has the potential to create some hilarious article-quote pairs.
+You can see that this has the potential to create some hilarious article-quote pairs.
 
 ## Challenges
 
