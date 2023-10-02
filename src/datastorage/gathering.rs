@@ -123,12 +123,13 @@ impl SearchConstraints {
 mod tests{
 
     use super::*;
+    use futures::executor; 
 
     #[test]
     fn test_parseargs_date() {
         let mut sc = SearchConstraints::new();
 
-        sc.parse_args("--exclude-before 2022-09-30 --exclude-after 2023-09-30".to_string());
+        executor::block_on(sc.parse_args("--exclude-before 2022-09-30 --exclude-after 2023-09-30".to_string()));
 
         assert_eq!(sc.before_date, NaiveDate::from_ymd_opt(2022,9,30).unwrap());
         assert_eq!(sc.after_date, NaiveDate::from_ymd_opt(2023,9,30).unwrap());
