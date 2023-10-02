@@ -31,7 +31,7 @@ You can see that this has the potential to create some hilarious article-quote p
 
 This was the first challenge I wanted to tackle, as it was the least dependent on other factors (like an API for Current Events). You can see at [datastorage.rs](https://github.com/njrogie/reece_concierge/blob/aab549d9343dcaebe2531a6c0d2ea4ad06133705/src/datastorage.rs#L57) how this parsing begins in `start_gather_data(...)`. Search constraints are obtained via cli-like arguments given in the message, and the program then initiates the message aggregation in each non-excluded channel on the server.
 
-Because development is still in its early stages, each user has their message stored in a .json file. I designed the `datastorage` module's interfaces such that it would be simple to refactor the software into a database-oriented storage schema later on down the line. I hope to eventually publicly deploy this bot and be able to gain experience in contanierized scalability as well as backend development.
+Because development is still in its early stages, each user has their messages stored in multiple .json files. I designed the `datastorage` module's interfaces such that it would be simple to refactor the software into a database-oriented storage schema later on down the line. I hope to eventually publicly deploy this bot and be able to gain experience in contanierized scalability as well as backend development.
 
 #### Design Decisions
 
