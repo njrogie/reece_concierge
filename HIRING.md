@@ -37,7 +37,7 @@ Because development is still in its early stages, each user has their messages s
 
 - Upon loading the app, if no stored messages are detected then the app will begin to process the server's messages. Messages are organized currently in a directory structure: `[AppData folder]/channel_id/month/user_id.json`, but as mentioned earlier will be sent to a database eventually.
 - Each user thus has several files attributed to them. They will possibly have many active months in the server, and will have a representative number of files to sort through when choosing a message.
-  - To perform an extremely fast pseudo-random calculation, the list of files is accumulated along with the filesizes of each. While not a 1\:1 value, filesize is a good enough indication of "weight" that a file should have in a pseudorandom choice.
+  - To perform an extremely fast pseudo-random calculation, the list of files is accumulated along with the filesizes of each. While not a 1\:1 value, filesize is a good enough indication of the "weight" that a file should have when making a pseudorandom decision on which file to use.
   - After choosing the file, a random message is selected from the file.
 - This process is repeated once for each active user. An active user has 2 files representing their messages over of the past two months.
 
