@@ -12,4 +12,6 @@ home = "0.5.5"
 log = "0.4.20"
 log4rs = "1.2.0"
 serenity = "0.11.6"
+substring = "1.4.5"
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
+utc = "0.2.0"

@@ -1,4 +1,5 @@
 use std::env;
+
 use dotenv::dotenv;
 
 use serenity::async_trait;
@@ -9,10 +10,9 @@ use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::{StandardFramework, CommandResult};
 
 mod datastorage;
-//mod logger;
 
 #[group]
-#[commands(ping,count,setchannel)]
+#[commands(ping,count,setchannel,initgather)]
 struct General;
 
 struct Handler;
@@ -62,6 +62,17 @@ async fn count(ctx: &Context, msg: &Message) -> CommandResult {
     
     reply(msg, ctx, response).await; 
 
+    Ok(())
+}
+
+#[command]
+async fn initgather(ctx: &Context, msg: &Message) -> CommandResult {
+    let mtx = tokio::sync::Mutex::new(0);
+    let _guard = mtx.lock().await;
+
+    let reply_msg = datastorage::start_gather_data(ctx, msg).await;
+
+    reply(msg, ctx, reply_msg).await;
     Ok(())
 }
 

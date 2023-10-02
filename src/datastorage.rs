@@ -9,7 +9,12 @@ use std::{fs, path::PathBuf};
 use std::io::{Error, ErrorKind, Write};
 use home;
 
+use serenity::model::channel::Message;
+use serenity::client::Context;
+
 mod gathering; 
+
+use gathering::SearchConstraints;
 
 pub fn init(){
     let appdata = appdata_dir().to_string();
@@ -46,6 +51,17 @@ pub fn get_channelid(guild: String) -> Result<String, std::io::Error> {
         Err(_) => Err(Error::new(
             ErrorKind::NotFound,
             "Could not read channel id"))
+    }
+}
+
+pub async fn start_gather_data(_ctx: &Context, msg: &Message) -> String {
+    println!("Begin data gathering...");
+    let mut sc = SearchConstraints::new();
+    if let Err(e) = sc.parse_args(msg.content.clone()).await {
+        return e;
+    } else {
+        // We don't have a parse error; continue with the data processing.
+        return String::from("Parsed Correctly. More processing would normally happen at this point.");
     }
 }
 
@@ -90,7 +106,7 @@ mod tests {
     fn test_savechannelid() {
         save_channelid(100, "test".to_string());
         assert!({
-            match fs::metadata("/home/njrogie/.concierge/100/channel_id") {
+            match fs::metadata(home::home_dir().unwrap().to_str().unwrap().to_owned() + "/.concierge/100/channel_id") {
                 Ok(_) => true,
                 Err(_) => {
                     false
@@ -101,12 +117,13 @@ mod tests {
 
     #[test]
     fn test_channelid() {
-        assert_eq!(channelid_filepath("guild".to_string()), PathBuf::from("/home/njrogie/.concierge/guild/channel_id"));
+        assert_eq!(channelid_filepath("guild".to_string()), 
+            PathBuf::from(home::home_dir().unwrap().to_str().unwrap().to_owned() + "/.concierge/guild/channel_id"));
     }
 
     #[test]
     fn test_appdata() {
-        assert_eq!(appdata_dir(), "/home/njrogie/.concierge");
+        assert_eq!(appdata_dir(), home::home_dir().unwrap().to_str().unwrap().to_owned() + "/.concierge");
     }
 
     #[test]
