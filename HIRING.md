@@ -4,7 +4,7 @@ Hi there. My name is Nick, and my specialization is usually embedded apps and dr
 
 ## Project Background
 
-One of my friends, Reece, has a Discord server where everyone enjoys playing games together, making jokes, and having a good time. We wanted to make a bot that would generate content that we could collectively laugh at.
+One of my friends, Reece, has a Discord server where our mutual friends enjoy playing games together, making jokes, and generally having a good time. We wanted to make a bot that would generate content that we could collectively laugh at.
 
 ### Purpose
 
