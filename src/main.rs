@@ -23,7 +23,6 @@ impl EventHandler for Handler {}
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    env::set_var("RUST_BACKTRACE","1");
 
     datastorage::init();
     //logger::init();
@@ -41,6 +40,8 @@ async fn main() {
         .framework(framework)
         .await
         .expect("Error creating client");
+
+    println!("Starting client...");
     // start listening for events by starting a single shard
     if let Err(why) = client.start().await {
         println!("An error occurred while running the client: {:?}", why);
@@ -69,9 +70,8 @@ async fn count(ctx: &Context, msg: &Message) -> CommandResult {
 async fn initgather(ctx: &Context, msg: &Message) -> CommandResult {
     let mtx = tokio::sync::Mutex::new(0);
     let _guard = mtx.lock().await;
-
+    reply(msg, ctx, "Beginning to gather messages...".to_owned()).await;
     let reply_msg = datastorage::start_gather_data(ctx, msg).await;
-
     reply(msg, ctx, reply_msg).await;
     Ok(())
 }

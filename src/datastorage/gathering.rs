@@ -1,8 +1,12 @@
 use std::io::ErrorKind;
 
 use chrono::{NaiveDate, Utc}; 
-use serenity::model::id::ChannelId;
+use serenity::model::prelude::Message;
+use serenity::model::{id::ChannelId, id::GuildId};
+use serenity::client::Context;
 use substring::Substring;
+use serde_json::Result;
+
 
 enum ArgKind {
     ExcludeBefore(NaiveDate),
@@ -25,6 +29,33 @@ impl SearchConstraints {
         }
     }
 
+    pub async fn store_channels(&self, ctx: &Context, guild: &GuildId) -> core::result::Result<&str,&str> {
+        let channel_list = guild.channels(&ctx.http).await;
+        match channel_list {
+            Ok(it) => {
+                for (ch,guild_ch) in it {
+                    match ch.name(&ctx.cache).await {
+                        Some(name) => {
+                            if name == "robot-zone" {
+                                // Aggregate messages
+                                let messages = ch.messages(ctx, |b|b).await.unwrap();
+
+                                self.process_messages(messages);
+                                return Ok("Done")
+                            }
+                        }, 
+                        None => { }
+                    }
+                    
+                }
+            },
+            Err(e) => { 
+                return Err("Could not get channel list");
+            }
+        }
+        return Ok("Test")
+    }
+
     // return true if allowed_channels contains the target channel.
     pub fn is_channelid_allowed(&self, channel: ChannelId) -> bool {
         for (_, ch) in self.allowed_channels.iter().enumerate() {
@@ -36,7 +67,7 @@ impl SearchConstraints {
     }
 
     // attempts to store a set of args into search constraints.
-    pub async fn parse_args(&mut self, args_str: String) -> Result<String,String>{
+    pub async fn parse_args(&mut self, args_str: String) -> core::result::Result<String,String>{
         // Split the string by space.
         let words = args_str.split(' ').collect::<Vec<&str>>();
         // Pair the arg-param pairs together.
@@ -87,7 +118,7 @@ impl SearchConstraints {
         }
     }
 
-    fn parse_command(arg: &str, param: &str) -> Result<ArgKind, std::io::Error> {
+    fn parse_command(arg: &str, param: &str) -> core::result::Result<ArgKind, std::io::Error> {
         let parse_date = |cmd: &str| -> NaiveDate {
             match NaiveDate::parse_from_str(cmd, "%Y-%m-%d") {
                 Ok(it) => it,
@@ -117,17 +148,28 @@ impl SearchConstraints {
             _ => Err(std::io::Error::new(ErrorKind::InvalidInput,"Incorrect Argument Type"))
         }
     }
+
+    fn process_messages(&self, msgs: Vec<Message>) -> Result<()> {
+        // Firstly, output the messages to a test file so that we can process them in again.
+        let j = serde_json::to_string(&msgs[0])?;
+        println!("{}",j);
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests{
     use super::*;
     use futures::executor; 
+    
     macro_rules! block {
         ($($x:expr),* ) => {
             executor::block_on($($x)*)
         };
     }
+
+
     #[test]
     fn test_parseargs_date() {
         let mut sc = SearchConstraints::new();

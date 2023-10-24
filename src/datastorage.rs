@@ -21,6 +21,27 @@ pub fn init(){
     mkdir_if_not_exist(appdata);
 }
 
+// Main routine for gathering data.
+pub async fn start_gather_data(ctx: &Context, msg: &Message) -> String {
+    println!("Begin data gathering...");
+    let mut sc = SearchConstraints::new();
+    if let Err(e) = sc.parse_args(msg.content.clone()).await {
+        return e;
+    } else {
+        // We don't have a parse error; continue with the data processing.
+        // Get the channels from the server.
+        match msg.guild_id {
+            None => return String::from("Couldn't properly parse guild id."),
+            Some(guild) => {
+                match sc.store_channels(&ctx,&guild).await {
+                    Ok(_) => return String::from("Channels stored."),
+                    Err(_) => return String::from("Couldn't store channels")
+                }
+            }
+        }
+    }
+}
+
 pub fn save_channelid(guild: u64, channel: String) {
     mkdir_if_not_exist(appdata_dir().to_owned() + "/" + &guild.to_string());
 
@@ -54,16 +75,6 @@ pub fn get_channelid(guild: String) -> Result<String, std::io::Error> {
     }
 }
 
-pub async fn start_gather_data(_ctx: &Context, msg: &Message) -> String {
-    println!("Begin data gathering...");
-    let mut sc = SearchConstraints::new();
-    if let Err(e) = sc.parse_args(msg.content.clone()).await {
-        return e;
-    } else {
-        // We don't have a parse error; continue with the data processing.
-        return String::from("Parsed Correctly. More processing would normally happen at this point.");
-    }
-}
 
 fn create_dir(path: String) {
     println!("path:{}", path);
