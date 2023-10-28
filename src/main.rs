@@ -23,7 +23,7 @@ impl EventHandler for Handler {}
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-
+    
     datastorage::init();
     //logger::init();
     println!("Initializing framework");

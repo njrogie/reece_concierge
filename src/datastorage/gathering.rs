@@ -39,7 +39,6 @@ impl SearchConstraints {
                             if name == "robot-zone" {
                                 // Aggregate messages
                                 let messages = ch.messages(ctx, |b|b).await.unwrap();
-
                                 self.process_messages(messages);
                                 return Ok("Done")
                             }
@@ -56,16 +55,6 @@ impl SearchConstraints {
         return Ok("Test")
     }
 
-    // return true if allowed_channels contains the target channel.
-    pub fn is_channelid_allowed(&self, channel: ChannelId) -> bool {
-        for (_, ch) in self.allowed_channels.iter().enumerate() {
-            if ch.as_u64() == channel.as_u64() {
-                return true;
-            }
-        }
-        false
-    }
-
     // attempts to store a set of args into search constraints.
     pub async fn parse_args(&mut self, args_str: String) -> core::result::Result<String,String>{
         // Split the string by space.
@@ -74,7 +63,6 @@ impl SearchConstraints {
         let result = words.iter().zip(words.iter().skip(1));
         let pairs = result.collect::<Vec<_>>();
 
-        
         for pair in pairs {
             // check for argument type
             if String::from(pair.0.to_owned()).starts_with("--") {
@@ -91,31 +79,13 @@ impl SearchConstraints {
                 }
             } 
         }
-        Ok(String::from("Arguments Parsed."))
-    }
 
-    fn date_range(&self) -> (NaiveDate, NaiveDate) {
-        let is_valid_date = |date: &NaiveDate| -> bool {
-            date != &NaiveDate::default()
-        };
-
-        let valid_before = is_valid_date(&self.before_date);
-        let valid_after = is_valid_date(&self.after_date);
-
-        if !valid_after {
-            let now = Utc::now().naive_local().date();
-            if !valid_before  {
-                return (NaiveDate::default(), now);
-            } else {
-                return (self.before_date, now);
-            }
+        if self.validate() {
+            Ok(String::from("Arguments Parsed."))
         } else {
-            if !valid_before {
-                return (NaiveDate::default(), self.after_date);
-            } else {
-                return (self.before_date,self.after_date)
-            }
+            Err(String::from("Not enough arguments added"));
         }
+        
     }
 
     fn parse_command(arg: &str, param: &str) -> core::result::Result<ArgKind, std::io::Error> {
@@ -153,8 +123,46 @@ impl SearchConstraints {
         // Firstly, output the messages to a test file so that we can process them in again.
         let j = serde_json::to_string(&msgs[0])?;
         println!("{}",j);
-
+        
         Ok(())
+    }
+
+    fn validate(&self) -> bool {
+        return self.before_date != NaiveDate::default() && self.after_date != NaiveDate::default();
+    }
+
+    fn date_range(&self) -> (NaiveDate, NaiveDate) {
+        let is_valid_date = |date: &NaiveDate| -> bool {
+            date != &NaiveDate::default()
+        };
+
+        let valid_before = is_valid_date(&self.before_date);
+        let valid_after = is_valid_date(&self.after_date);
+
+        if !valid_after {
+            let now = Utc::now().naive_local().date();
+            if !valid_before  {
+                return (NaiveDate::default(), now);
+            } else {
+                return (self.before_date, now);
+            }
+        } else {
+            if !valid_before {
+                return (NaiveDate::default(), self.after_date);
+            } else {
+                return (self.before_date,self.after_date)
+            }
+        }
+    }
+    
+    // return true if allowed_channels contains the target channel.
+    pub fn is_channelid_allowed(&self, channel: ChannelId) -> bool {
+        for (_, ch) in self.allowed_channels.iter().enumerate() {
+            if ch.as_u64() == channel.as_u64() {
+                return true;
+            }
+        }
+        false
     }
 }
 
