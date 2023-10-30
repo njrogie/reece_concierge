@@ -42,16 +42,15 @@ impl SearchConstraints {
                 for (ch,guild_ch) in it {
                     match ch.name(&ctx.cache).await {
                         Some(name) => {
-                            if name == "robot-zone" {
-                                // Aggregate messages
-                                let messages = ch.messages(ctx,
-                                    |b| {
-                                        b.limit(1024)
-                                }   ).await.unwrap();
-                                
-                                self.process_messages(messages,name);
-                                return Ok("Done")
-                            }
+                            println!("beginning to parse for channel \"{}\"",name);
+
+                            // Aggregate messages
+                            let messages = ch.messages(ctx,
+                                |b| {
+                                    b.limit(1024)
+                            }   ).await.unwrap();
+                            
+                            self.process_messages(messages,name);
                         }, 
                         None => { }
                     }
@@ -94,7 +93,6 @@ impl SearchConstraints {
 
     fn process_messages(&self, msgs: Vec<Message>, channel_name: String) -> Result<()> {
         let mut fullJson = String::from("");
-
         for msg in msgs.iter() {
             let j = serde_json::to_string(msg)?;
             fullJson.push_str(&j);
@@ -102,7 +100,6 @@ impl SearchConstraints {
         }
         
         // Store the messages to a file
-        println!("{}",fullJson);
         fs::write(format!("C:\\Users\\njrog\\Documents\\{}.json",channel_name), fullJson).expect("Unable to write file.");
         Ok(())
     }
