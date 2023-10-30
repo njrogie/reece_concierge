@@ -7,6 +7,8 @@ use serenity::client::Context;
 use substring::Substring;
 use serde_json::Result;
 
+use super::utils;
+use std::fs;
 
 enum ArgKind {
     ExcludeBefore(NaiveDate),
@@ -20,6 +22,10 @@ pub struct SearchConstraints {
     pub allowed_channels: Vec<ChannelId> // might end up being strings eventually
 }
  
+// General use:
+// - call parse_args to store constraints
+// - if we have some kind of constraint present, then we can call store_channels
+// to begin searching for messages.
 impl SearchConstraints {
     pub fn new() -> SearchConstraints {
         SearchConstraints { 
@@ -38,8 +44,12 @@ impl SearchConstraints {
                         Some(name) => {
                             if name == "robot-zone" {
                                 // Aggregate messages
-                                let messages = ch.messages(ctx, |b|b).await.unwrap();
-                                self.process_messages(messages);
+                                let messages = ch.messages(ctx,
+                                    |b| {
+                                        b.limit(1024)
+                                }   ).await.unwrap();
+                                
+                                self.process_messages(messages,name);
                                 return Ok("Done")
                             }
                         }, 
@@ -79,13 +89,22 @@ impl SearchConstraints {
                 }
             } 
         }
+        Ok(String::from("Arguments Parsed."))
+    }
 
-        if self.validate() {
-            Ok(String::from("Arguments Parsed."))
-        } else {
-            Err(String::from("Not enough arguments added"));
+    fn process_messages(&self, msgs: Vec<Message>, channel_name: String) -> Result<()> {
+        let mut fullJson = String::from("");
+
+        for msg in msgs.iter() {
+            let j = serde_json::to_string(msg)?;
+            fullJson.push_str(&j);
+            fullJson.push_str("\n");
         }
         
+        // Store the messages to a file
+        println!("{}",fullJson);
+        fs::write(format!("C:\\Users\\njrog\\Documents\\{}.json",channel_name), fullJson).expect("Unable to write file.");
+        Ok(())
     }
 
     fn parse_command(arg: &str, param: &str) -> core::result::Result<ArgKind, std::io::Error> {
@@ -119,14 +138,6 @@ impl SearchConstraints {
         }
     }
 
-    fn process_messages(&self, msgs: Vec<Message>) -> Result<()> {
-        // Firstly, output the messages to a test file so that we can process them in again.
-        let j = serde_json::to_string(&msgs[0])?;
-        println!("{}",j);
-        
-        Ok(())
-    }
-
     fn validate(&self) -> bool {
         return self.before_date != NaiveDate::default() && self.after_date != NaiveDate::default();
     }
@@ -153,16 +164,6 @@ impl SearchConstraints {
                 return (self.before_date,self.after_date)
             }
         }
-    }
-    
-    // return true if allowed_channels contains the target channel.
-    pub fn is_channelid_allowed(&self, channel: ChannelId) -> bool {
-        for (_, ch) in self.allowed_channels.iter().enumerate() {
-            if ch.as_u64() == channel.as_u64() {
-                return true;
-            }
-        }
-        false
     }
 }
 

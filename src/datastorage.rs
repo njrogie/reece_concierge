@@ -7,17 +7,18 @@
 */
 use std::{fs, path::PathBuf};
 use std::io::{Error, ErrorKind, Write};
-use home;
+
 
 use serenity::model::channel::Message;
 use serenity::client::Context;
 
 mod gathering; 
+mod utils;
 
 use gathering::SearchConstraints;
 
 pub fn init(){
-    let appdata = appdata_dir().to_string();
+    let appdata = utils::appdata_dir().to_string();
     mkdir_if_not_exist(appdata);
 }
 
@@ -43,7 +44,7 @@ pub async fn start_gather_data(ctx: &Context, msg: &Message) -> String {
 }
 
 pub fn save_channelid(guild: u64, channel: String) {
-    mkdir_if_not_exist(appdata_dir().to_owned() + "/" + &guild.to_string());
+    mkdir_if_not_exist(utils::appdata_dir().to_owned() + "/" + &guild.to_string());
 
     let mut res = fs::OpenOptions::new();
     let createfile = res.create(true).write(true);
@@ -85,7 +86,6 @@ fn create_dir(path: String) {
 }
 
 fn mkdir_if_not_exist(dir_name: String) {
-    
     match fs::metadata(&dir_name) {
         Ok(_) => println!("{} dir exists", dir_name),
         Err(_) => {
@@ -96,18 +96,13 @@ fn mkdir_if_not_exist(dir_name: String) {
 }
 
 fn channelid_filepath(guild: String) -> PathBuf {
-    let appdata = appdata_dir();
+    let appdata = utils::appdata_dir();
     
     let mut appdata = PathBuf::from(appdata);
     appdata.push(guild + "/channel_id");
     appdata
 }
 
-fn appdata_dir() -> String {
-    let mut home = home::home_dir().unwrap().to_str().unwrap().to_owned();
-    home.push_str("/.concierge");
-    home
-}
 
 #[cfg(test)]
 mod tests {
@@ -134,7 +129,7 @@ mod tests {
 
     #[test]
     fn test_appdata() {
-        assert_eq!(appdata_dir(), home::home_dir().unwrap().to_str().unwrap().to_owned() + "/.concierge");
+        assert_eq!(utils::appdata_dir(), home::home_dir().unwrap().to_str().unwrap().to_owned() + "/.concierge");
     }
 
     #[test]
